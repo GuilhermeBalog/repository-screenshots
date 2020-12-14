@@ -6,7 +6,7 @@ const screenshotsPath = path.join(process.cwd(), 'screenshots')
 
 module.exports = async function getScreenshots(repos) {
 
-  console.log('> Levantando o browser')
+  console.log('> Abrindo o browser')
   const browser = await puppeteer.launch({
     executablePath
   })
@@ -19,18 +19,22 @@ module.exports = async function getScreenshots(repos) {
 
   for (let i = 0; i < repos.length; i++) {
     await getScreenshot(repos[i], page)
-    // break
   }
 
-  browser.close()
+  console.log('> Fechando o browser')
+  await browser.close()
 }
 
 async function getScreenshot(repo, page) {
-  console.log(`> Abrindo ${repo.homepage}`)
-  await page.goto(repo.homepage)
+  try {
+    console.log(`> Abrindo ${repo.homepage}`)
+    await page.goto(repo.homepage)
 
-  console.log(`> Tirando screenshot para o repositório ${repo.name}`)
-  await page.screenshot({
-    path: path.join(screenshotsPath, `${repo.name}.png`)
-  })
+    console.log(`> Tirando screenshot para o repositório ${repo.name}`)
+    await page.screenshot({
+      path: path.join(screenshotsPath, `${repo.name}.png`)
+    })
+  } catch (e) {
+    throw { message: 'Erro ao tirar screenshot para ' + repo.name }
+  }
 }
