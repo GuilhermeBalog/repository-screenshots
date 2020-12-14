@@ -1,0 +1,7 @@
+{
+  "name": "repo-screenshot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Guilherme Balog Gardino <guibalog@gmail.com> (https://guilhermebalog.github.io)",
+  "license": "MIT"
+}
