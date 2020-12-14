@@ -1,7 +1,7 @@
 const api = require('./api')
 
 async function getRepositories(username) {
-
+  const shouldUseMock = false
   const totalRepos = []
   const mockRepos = [
     [
@@ -28,11 +28,15 @@ async function getRepositories(username) {
     let page = 1
 
     while (true) {
-      const url = `/users/${username}/repos?type=all&per_page=100&page=${page}`
-      const response = await api.get(url)
-      const repos = response.data
-      // const repos = mockRepos[page - 1]
-      // if (username == 'a') throw { response: { status: 404 } }
+      let repos;
+      if (shouldUseMock) {
+        const url = `/users/${username}/repos?type=all&per_page=100&page=${page}`
+        const response = await api.get(url)
+        repos = response.data
+      } else {
+        repos = mockRepos[page - 1]
+        if (username == 'a') throw { response: { status: 404 } }
+      }
 
       if (repos.length === 0) break
 
