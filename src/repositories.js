@@ -30,12 +30,12 @@ async function getRepositories(username) {
     while (true) {
       let repos;
       if (shouldUseMock) {
+        repos = mockRepos[page - 1]
+        if (username == 'a') throw { response: { status: 404 } }
+      } else {
         const url = `/users/${username}/repos?type=all&per_page=100&page=${page}`
         const response = await api.get(url)
         repos = response.data
-      } else {
-        repos = mockRepos[page - 1]
-        if (username == 'a') throw { response: { status: 404 } }
       }
 
       if (repos.length === 0) break

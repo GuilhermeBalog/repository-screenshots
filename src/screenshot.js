@@ -1,40 +1,62 @@
 const puppeteer = require('puppeteer-core')
-const path = require('path')
+const { join } = require('path')
+const { existsSync } = require('fs')
 const executablePath = require('./chromePath')
 
-const screenshotsPath = path.join(process.cwd(), 'screenshots')
+const screenshotsPath = join(process.cwd(), 'screenshots')
 
-module.exports = async function getScreenshots(repos) {
+const Screenshot = {
+  browser: null,
+  page: null,
+  httpRegex: /^https?:\/\//gi,
 
-  console.log('> Abrindo o browser')
-  const browser = await puppeteer.launch({
-    executablePath
-  })
+  async init() {
+    console.log('Iniciando o browser...')
+    this.browser = await puppeteer.launch({ executablePath, headless: true })
+    console.log('Abrindo página...')
+    this.page = await this.browser.newPage()
+    console.log('Definindo viewport...')
+    await this.page.setViewport({ width: 1280, height: 640 })
+  },
 
-  console.log('> Criando a página')
-  const page = await browser.newPage()
+  async finish() {
+    if (this.browser) {
+      this.browser.close()
+    }
+  },
 
-  console.log('> Definindo o viewport');
-  await page.setViewport({ width: 1200, height: 600 })
+  async getReposScreenshot(repos) {
+    for (let i = 0; i < repos.length; i++) {
+      await this.getScreenshot(repos[i].homepage)
+    }
+  },
 
-  for (let i = 0; i < repos.length; i++) {
-    await getScreenshot(repos[i], page)
+  async getScreenshot(url) {
+    try {
+      const path = join(screenshotsPath, `${this.urlToFileName(url)}.png`)
+      if (existsSync(path)) {
+        console.log(`Pulando pois screenshot para ${url} já existe`)
+        return
+      }
+
+      if(!this.httpRegex.test(url)){
+        console.log('Adicionando http:// ao início da URL')
+        url = `http://${url}`
+      }
+
+      await this.page.goto(url)
+      await this.page.screenshot({ path })
+      console.log(`Screenshot de ${url} salva em ${path}`)
+
+    } catch (e) {
+      console.log(`Erro ao tirar screenshot para ${url}:`)
+      console.log(`\t> ${e.message}\n`)
+    }
+  },
+
+  urlToFileName(url) {
+    return `${url.replace(this.httpRegex, '').replace(/\//g, '_')}`
   }
-
-  console.log('> Fechando o browser')
-  await browser.close()
 }
 
-async function getScreenshot(repo, page) {
-  try {
-    console.log(`> Abrindo ${repo.homepage}`)
-    await page.goto(repo.homepage)
-
-    console.log(`> Tirando screenshot para o repositório ${repo.name}`)
-    await page.screenshot({
-      path: path.join(screenshotsPath, `${repo.name}.png`)
-    })
-  } catch (e) {
-    throw { message: 'Erro ao tirar screenshot para ' + repo.name }
-  }
-}
+module.exports = { Screenshot }

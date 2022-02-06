@@ -1,37 +1,34 @@
-const readlineSync = require('readline-sync');
-const getRepositoriesWithHomepage = require('./repositories')
-const getScreenshots = require('./screenshot')
+const readlineSync = require('readline-sync')
 
-console.log('\nBem vindo ao repo-screenshot!\n')
+const { Screenshot } = require('./screenshot')
+const { getCommands } = require('./commands')
 
-getScreenshotsFromUser()
+async function main() {
+  const welcomeMessage = 'Bem vindo ao repository-screenshots!'
+  console.log('\n' + '='.repeat(welcomeMessage.length + 2))
+  console.log(` ${welcomeMessage} `)
+  console.log('='.repeat(welcomeMessage.length + 2) + '\n')
 
-async function getScreenshotsFromUser() {
-  let username = readlineSync.question('> Digite seu username do Github: ')
-  let repos = []
+  await Screenshot.init()
+  const commands = getCommands({
+    screenshotInstance: Screenshot,
+    readline: readlineSync
+  })
+  const options = commands.map(command => command.message)
 
-  while (true) {
-    try {
-      repos = await getRepositoriesWithHomepage(username)
-      if (repos.length > 0) {
-        break
-      } else {
-        console.log('\nNenhum repositório com homepage encontrado, finalizando!')
-        process.exit(0)
-      }
+  do {
+    const selectedIndex = readlineSync.keyInSelect(options, 'Que tipo de screenshot você quer?')
 
-    } catch (e) {
-      console.log(`\n${e.message}\n`)
-
-      if (e.code === 404) {
-        username = readlineSync.question('> Digite seu username do Github novamente: ')
-      } else {
-        process.exit(1)
-      }
+    if(selectedIndex < 0) {
+      console.log('Nenhuma opção selecionada. Até mais!')
+      break
     }
-  }
-  console.log(`> Repositórios com homepage encontrados: ${repos.length}`)
-  await getScreenshots(repos)
 
-  console.log('\nFinalizado!')
+    await commands[selectedIndex].action()
+  } while (readlineSync.keyInYN('Deseja tirar mais screenshots?'))
+
+  console.log('Muito obrigado por utilizar repository-screenshots!')
+  await Screenshot.finish()
 }
+
+main()
